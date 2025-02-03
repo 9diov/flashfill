@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { Interpreter } from '../src/interpreter';
-import { SubstringExpression, TraceExpression, Position, ConstantPosition } from '../src/types';
+import { Interpreter } from '../src/lang';
+import { SubstringExpression, TraceExpression, Position, ConstantPosition } from '../src/lang';
 
 describe('Interpreter', () => {
     it('should interpret substring expression correctly', () => {
