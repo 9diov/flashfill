@@ -1,10 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { Interpreter } from '../src/lang';
-import { SubstringExpression, TraceExpression, Position, ConstantPosition } from '../src/lang';
+import { Interpreter, SubstringExpression, TraceExpression, Position, ConstantPosition, Exp } from '../src/lang';
 
 describe('Interpreter', () => {
-    it('should interpret substring expression correctly', () => {
-        const interpreter = new Interpreter();
+    it('should use utility functions correctly', () => {
         const startPos: Position = {
             type: 'Pos',
             regex1: {
@@ -32,6 +30,25 @@ describe('Interpreter', () => {
             type: 'Concatenate',
             expressions: [subStringExpression]
         };
+        const traceExpression2: TraceExpression =
+            Exp.Trace(
+                Exp.SubStr("v1",
+                    Exp.Pos(Exp.EmptyRegex(), Exp.Regex(Exp.NumToken()), 1),
+                    Exp.CPos(-1)
+                )
+            );
+        expect(traceExpression).toEqual(traceExpression2);
+    });
+
+    it('should interpret substring expression correctly', () => {
+        const interpreter = new Interpreter();
+        const traceExpression: TraceExpression =
+            Exp.Trace(
+                Exp.SubStr("v1",
+                    Exp.Pos(Exp.EmptyRegex(), Exp.Regex(Exp.NumToken()), 1),
+                    Exp.CPos(-1)
+                )
+            );
 
         const examples = [
             { input: ["BTR KRNL WK CORN 15Z"], output: "15Z" },
@@ -41,8 +58,6 @@ describe('Interpreter', () => {
             { input: ["O F TOMATO PASTE 6 OZ"], output: "6 OZ" }
         ];
 
-        console.log(interpreter.interpretPosition(startPos, "BTR KRNL WK CORN 15Z"));
-        console.log(interpreter.interpretPosition(startPos, "CAM DRY DBL NDL 3.6 OZ"));
         for (const example of examples) {
             expect(interpreter.interpretTrace(traceExpression, { v1: example.input[0] })).toEqual({ type: 'success', value: example.output });
         }

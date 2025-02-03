@@ -355,3 +355,70 @@ function mapRegex(regex: RegularExpression): string {
         throw new Error('Unsupported regex type');
     }
 }
+
+// ********************************
+// Utitilies functions to succintly create expressions
+// ********************************
+
+export class Exp {
+    static Trace(...expressions: Array<AtomicExpression>): TraceExpression {
+        return {
+            type: 'Concatenate',
+            expressions: expressions
+        };
+    }
+
+    static SubStr(vi, r, c): SubstringExpression {
+        return {
+            type: 'SubStr',
+            variable: { type: 'StringVariable', name: vi },
+            start: r,
+            end: c
+        };
+    }
+
+    static ConstStr(value: string): ConstantExpression {
+        return {
+            type: 'ConstStr',
+            value: value
+        };
+    }
+
+    static Pos(r1: RegularExpression, r2: RegularExpression, c: number): RegularExpressionPosition {
+        return {
+            type: 'Pos',
+            regex1: r1,
+            regex2: r2,
+            count: { type: 'Constant', value: c }
+        };
+    }
+
+    static CPos(c: number): ConstantPosition {
+        return {
+            type: 'CPos',
+            value: c
+        };
+    }
+
+    static Regex(...tokens: Array<Token>): RegularExpression {
+        return {
+            type: 'TokenSeq',
+            tokens: tokens
+        };
+    }
+
+    static EmptyRegex(): RegularExpression {
+        return {
+            type: 'TokenSeq',
+            tokens: []
+        };
+    }
+
+    static NumToken(): CharacterClassToken {
+        return {
+            type: 'CharacterClass',
+            characters: "Numeric"
+        };
+    }
+
+}
