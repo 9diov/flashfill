@@ -340,12 +340,11 @@ export class Interpreter {
                 error: 'Both regexes are empty'
             }
         }
-        let count = 0;
-        let cursor = -1; // for case when no match is found
-        console.log("regex1", regex1, "regex2", regex2);
-        let result;
+
         if (regex1 === '') {
             const Regex2 = new RegExp(mapRegex(pos.regex2), 'g');
+            let count = 0;
+            let result;
             while(result = Regex2.exec(input)) {
                 count++;
                 if (count === pos.count.value) {
@@ -356,7 +355,15 @@ export class Interpreter {
                 }
             }
         }
+
+        // Going through all the matches of regex1
+        // and checking if the prefix of the next part of the string matches regex2
+        // if it does, we increment the count
+        // return the position when count reaches the desired value
         const Regex1 = new RegExp(regex1, 'g');
+        let count = 0;
+        let cursor = -1; // for case when no match is found
+        let result;
         while (result = Regex1.exec(input)) {
             cursor = Regex1.lastIndex;
             if (input.slice(cursor).match("^" + regex2)) count++;
