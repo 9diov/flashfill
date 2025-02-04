@@ -28,7 +28,7 @@ export type Predicate = {
   type: 'Match' | 'NotMatch';
   variable: StringVariable;
   regex: RegularExpression;
-  position: number;  // k in Match(vi, r, k)
+  matches: number;  // k in Match(vi, r, k)
 };
 
 // String variables and constants
@@ -158,10 +158,36 @@ export class Interpreter {
     constructor() {}
 
     interpret(exp: StringExpression, inputs: Bindings): EvaluationResult  {
-        return {
-            type: 'success',
-            value: 'hello'
-        };
+        for (const { condition, result } of exp.cases) {
+            if (this.interpretBoolean(condition, inputs)) {
+                return this.interpretTrace(result, inputs);
+            }
+        }
+    }
+
+    interpretBoolean(exp: BooleanExpression, inputs: Bindings): boolean {
+        for (const conjunct of exp.conjuncts) {
+            if (this.interpretConjunct(conjunct, inputs)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    interpretConjunct(conjunct: Conjunct, inputs: Bindings): boolean {
+        for (const predicate of conjunct.predicates) {
+            if (!this.interpretPredicate(predicate, inputs)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    interpretPredicate(predicate: Predicate, inputs: Bindings): boolean {
+        const input = inputs[predicate.variable.name] as string;
+        const regex = mapRegex(predicate.regex);
+        const match = input.match(regex);
+        return predicate.type === 'Match' ? match !== null : match === null;
     }
 
     interpretTrace(trace: TraceExpression, inputs: Bindings): EvaluationResult {
@@ -543,7 +569,7 @@ export class E {
             type: 'Match',
             variable: { type: 'StringVariable', name: vi },
             regex: r,
-            position: k
+            matches: k
         };
     }
 
@@ -552,7 +578,7 @@ export class E {
             type: 'NotMatch',
             variable: { type: 'StringVariable', name: vi },
             regex: r,
-            position: k
+            matches: k
         };
     }
 
