@@ -210,7 +210,7 @@ export class Interpreter {
             this.interpretPosition(sub.start, inputStr, count as number);
         const endPos = count === undefined ? this.interpretPosition(sub.end, inputStr) :
             this.interpretPosition(sub.end, inputStr, count as number);
-        console.log("input", inputStr, "start:", startPos, "end:", endPos);
+        console.log("input", inputStr, "start:", startPos, "end:", endPos, "output:", inputStr.slice(startPos.value, endPos.value));
         if (startPos.type === 'error' || endPos.type === 'error') {
             return {
                 type: 'error',
@@ -277,6 +277,7 @@ export class Interpreter {
             return this.interpretConstantCountPosition(pos, input);
         } else if (pos.count.type === 'Linear') {
             if (count === undefined) {
+                console.log("integer variable for linear not defined", pos.count);
                 return {
                     type: 'error',
                     error: 'integer variable for linear not defined'
@@ -292,7 +293,7 @@ export class Interpreter {
 
     private interpretConstantCountPosition(pos: RegularExpressionPosition, input: string): PositionResult {
         if ((pos.count as ConstantInteger).value > 0) {
-            return this.findForwardPosition(pos, input);
+            return this.findForwardPosition2(pos, input);
         } else {
             return this.findBackwardPosition(pos, input);
         }
@@ -310,7 +311,8 @@ export class Interpreter {
 
     private findForwardPosition(pos: RegularExpressionPosition, input: string): PositionResult {
         let count = 0;
-        // console.log(input, mapRegex(pos.regex1), mapRegex(pos.regex2));
+        let cursor = 0;
+
         for (let i = 0; i < input.length; i++) {
             if (input.slice(0, i).match(mapRegex(pos.regex1) + "$") && 
                 input.slice(i).match("^" + mapRegex(pos.regex2))) {
@@ -323,6 +325,50 @@ export class Interpreter {
                 };
             }
         }
+        return {
+            type: 'error',
+            error: 'Position not found'
+        };
+    }
+
+    private findForwardPosition2(pos: RegularExpressionPosition, input: string): PositionResult {
+        const regex1 = mapRegex(pos.regex1);
+        const regex2 = mapRegex(pos.regex2);
+        if (regex1 === '' && regex2 === '') {
+            return {
+                type: 'error',
+                error: 'Both regexes are empty'
+            }
+        }
+        let count = 0;
+        let cursor = -1; // for case when no match is found
+        console.log("regex1", regex1, "regex2", regex2);
+        let result;
+        if (regex1 === '') {
+            const Regex2 = new RegExp(mapRegex(pos.regex2), 'g');
+            while(result = Regex2.exec(input)) {
+                count++;
+                if (count === pos.count.value) {
+                    return {
+                        type: 'success',
+                        value: result.index
+                    };
+                }
+            }
+        }
+        const Regex1 = new RegExp(regex1, 'g');
+        while (result = Regex1.exec(input)) {
+            cursor = Regex1.lastIndex;
+            if (input.slice(cursor).match("^" + regex2)) count++;
+            if (count === pos.count.value) {
+                console.log("cursor", cursor, "count", count, "result", result);
+                return {
+                    type: 'success',
+                    value: cursor
+                };
+            }
+        }
+
         return {
             type: 'error',
             error: 'Position not found'
@@ -364,23 +410,23 @@ function mapRegex(regex: RegularExpression): string {
         } else if (token.type === 'CharacterClass') {
             switch (token.characters) {
                 case 'Numeric': return '\\d+';
-                case 'Alphabetic': return '[a-zA-Z]';
-                case 'UpperAlphabet': return '[A-Z]';
-                case 'LowerAlphabet': return '[a-z]';
-                case 'Alphanumeric': return '\\w';
-                case 'Accented': return '[\\u00C0-\\u017F]';
-                case 'Whitespace': return '\\s';
-                case 'Any': return '.';
+                case 'Alphabetic': return '[a-zA-Z]+';
+                case 'UpperAlphabet': return '[A-Z]+';
+                case 'LowerAlphabet': return '[a-z]+';
+                case 'Alphanumeric': return '\\w+';
+                case 'Accented': return '[\\u00C0-\\u017F]+';
+                case 'Whitespace': return '\\s+';
+                case 'Any': return '.+';
             }
         } else if (token.type === 'NegativeCharacterClass') {
             switch (token.characters) {
-                case 'Numeric': return '\\D';
-                case 'Alphabetic': return '[^a-zA-Z]';
-                case 'UpperAlphabet': return '[^A-Z]';
-                case 'LowerAlphabet': return '[^a-z]';
-                case 'Alphanumeric': return '\\W';
-                case 'Accented': return '[^\\u00C0-\\u017F]';
-                case 'Whitespace': return '\\S';
+                case 'Numeric': return '\\D+';
+                case 'Alphabetic': return '[^a-zA-Z]+';
+                case 'UpperAlphabet': return '[^A-Z]+';
+                case 'LowerAlphabet': return '[^a-z]+';
+                case 'Alphanumeric': return '\\W+';
+                case 'Accented': return '[^\\u00C0-\\u017F]+';
+                case 'Whitespace': return '\\S+';
             }
         }
         else {
@@ -510,6 +556,20 @@ export class E {
         return {
             type: 'SpecialToken',
             characters: "RightParenToken"
+        };
+    }
+
+    static SpaceToken(): CharacterClassToken {
+        return {
+            type: 'CharacterClass',
+            characters: "Whitespace"
+        };
+    }
+
+    static NonSpaceToken(): NegativeCharacterClassToken {
+        return {
+            type: 'NegativeCharacterClass',
+            characters: "Whitespace"
         };
     }
 }

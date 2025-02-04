@@ -188,4 +188,50 @@ describe('Interpreter', () => {
         }
     });
 
+    it('should remove excess spaces and normalize whitespace', () => {
+        const interpreter = new Interpreter();
+        const traceExpression: TraceExpression = E.Trace(
+            E.Loop(
+                "w",
+                E.Trace(
+                    E.SubStr("v1",
+                        E.Pos(E.EmptyRegex(), E.Regex(E.NonSpaceToken()), "w"),
+                        E.Pos(E.Regex(E.NonSpaceToken()), E.Regex(E.SpaceToken(), E.NonSpaceToken()), "w")
+                    ),
+                    E.ConstStr(" ")
+                )
+            ),
+            E.SubStr2("v1", E.Regex(E.NonSpaceToken()), -1)
+        );
+        console.dir(traceExpression, { depth: null });
+
+        const examples = [
+            {
+                input: ["Oege    de    Moor"],
+                output: "Oege de Moor"
+            },
+            {
+                input: ["Kathleen   Fisher    AT&T Labs"],
+                output: "Kathleen Fisher AT&T Labs"
+            },
+            // Additional test cases
+            {
+                input: ["   Hello     World   "],
+                output: "Hello World"
+            },
+            {
+                input: ["First    Second     Third"],
+                output: "First Second Third"
+            },
+            {
+                input: ["No  Extra   Spaces  Here"],
+                output: "No Extra Spaces Here"
+            }
+        ];
+
+        for (const example of examples) {
+            expect(interpreter.interpretTrace(traceExpression, { v1: example.input[0] }))
+                .toEqual({ type: 'success', value: example.output });
+        }
+    });
 });
