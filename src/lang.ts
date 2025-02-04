@@ -120,12 +120,12 @@ export type Token =
 
 export type CharacterClassToken = {
   type: 'CharacterClass';
-  characters: 'Numeric' | 'Alphabetic' | 'Alphanumeric' | 'Accented' | 'Whitespace' | 'Any';
+  characters: 'Numeric' | 'Alphabetic' | 'UpperAlphabet' | 'LowerAlphabet' | 'Alphanumeric' | 'Accented' | 'Whitespace' | 'Any';
 };
 
 export type NegativeCharacterClassToken = {
   type: 'NegativeCharacterClass';
-  characters: 'Numeric' | 'Alphabetic' | 'Alphanumeric' | 'Accented' |'Whitespace';
+  characters: 'Numeric' | 'Alphabetic' | 'UpperAlphabet' | 'LowerAlphabet' | 'Alphanumeric' | 'Accented' |'Whitespace';
 };
 
 export type SpecialToken = {
@@ -137,8 +137,9 @@ export type SpecialToken = {
 // Interpreting the string expression language
 // ********************************
 
-type StringBindings = Record<string, string>; // e.g. {"v1": "Adam", "v2": "Sandler"}
-type IntegerBindings = Record<string, number>; // e.g. {"w": 3} - used during loop iteration
+// e.g. {"v1": "Adam", "v2": "Sandler"}
+// or {"w": 3} - used during loop iteration
+type Bindings = Record<string, string | number>;
 
 // Results of different expression evaluations
 export interface EvaluationResult {
@@ -156,60 +157,69 @@ export interface PositionResult {
 export class Interpreter {
     constructor() {}
 
-    interpret(exp: StringExpression, inputs: StringBindings): EvaluationResult  {
+    interpret(exp: StringExpression, inputs: Bindings): EvaluationResult  {
         return {
             type: 'success',
             value: 'hello'
         };
     }
 
-    interpretTrace(trace: TraceExpression, inputs: StringBindings): EvaluationResult {
+    interpretTrace(trace: TraceExpression, inputs: Bindings): EvaluationResult {
+        const results: string[] = [];
+
+        for (const exp of trace.expressions) {
+            let result: EvaluationResult;
+
+            switch (exp.type) {
+                case 'SubStr':
+                    result = this.interpretSubstring(exp, inputs);
+                    break;
+                case 'ConstStr':
+                    result = this.interpretConstant(exp);
+                    break;
+                case 'Loop':
+                    result = this.interpretLoop(exp, inputs);
+                    break;
+                default:
+                    throw new Error('Unsupported expression type. This should never happen');
+            }
+
+            if (result.type === 'error') {
+                return result; // Break early on any error
+            }
+
+            results.push(result.value!);
+        }
+
         return {
             type: 'success',
-            value: trace.expressions.map((exp) => {
-                if (exp.type === 'SubStr') {
-                    const result = this.interpretSubstring(exp, inputs);
-                    if (result.type === 'success') {
-                        return result.value;
-                    } else {
-                        console.log(result)
-                        return '#ERROR';
-                    }
-                } else if (exp.type === 'ConstStr') {
-                    const result = this.interpretConstant(exp);
-                    if (result.type === 'success') {
-                        return result.value;
-                    } else {
-                        return '#ERROR';
-                    }
-                } else if (exp.type === 'Loop') {
-                    return this.interpretLoop(exp, inputs, {}).value;
-                }
-            }).join('')
+            value: results.join('')
         };
-
     }
 
-    interpretSubstring(sub: SubstringExpression, inputs: StringBindings): EvaluationResult {
+    interpretSubstring(sub: SubstringExpression, inputs: Bindings): EvaluationResult {
         if (inputs[sub.variable.name] === undefined) {
             return {
                 type: 'error',
-                value: 'null'
+                value: 'undefined string variable'
             }
         }
-        const input = inputs[sub.variable.name];
-        const startPos = this.interpretPosition(sub.start, input);
-        const endPos = this.interpretPosition(sub.end, input);
-        console.log("input", input, "start:", startPos, "end:", endPos);
+        const inputStr = inputs[sub.variable.name] as string; // input string
+        const count = inputs["w"];
+        const startPos = count === undefined ? this.interpretPosition(sub.start, inputStr) :
+            this.interpretPosition(sub.start, inputStr, count as number);
+        const endPos = count === undefined ? this.interpretPosition(sub.end, inputStr) :
+            this.interpretPosition(sub.end, inputStr, count as number);
+        console.log("input", inputStr, "start:", startPos, "end:", endPos);
         if (startPos.type === 'error' || endPos.type === 'error') {
             return {
                 type: 'error',
-                value: 'null'
+                value: 'null substring'
             }
         }
         return {
             type: 'success',
-            value: input.slice(startPos.value, endPos.value)
+            value: inputStr.slice(startPos.value, endPos.value)
         };
     }
 
@@ -220,18 +230,27 @@ export class Interpreter {
         };
     }
 
-    interpretLoop(loop: LoopExpression, inputs: StringBindings, integers: IntegerBindings): EvaluationResult {
+    interpretLoop(loop: LoopExpression, inputs: Bindings): EvaluationResult {
+        const loopVar = loop.variable.name;
+        let count = 1, output = '';
+        while (true) {
+            const result = this.interpretTrace(loop.body, { ...inputs, [loopVar]: count });
+            if (result.type === "error") break;
+            output += result.value;
+            count += 1;
+        }
+
         return {
             type: 'success',
-            value: 'hello'
+            value: output
         };
     }
 
-    interpretPosition(pos: Position, input: string): PositionResult {
+    interpretPosition(pos: Position, input: string, count?: number): PositionResult {
         if (pos.type === 'CPos') {
             return this.interpretConstantPosition(pos, input);
         } else if (pos.type === 'Pos') {
-            return this.interpretRegexPosition(pos, input);
+            return this.interpretRegexPosition(pos, input, count);
         }
         return {
             type: 'error',
@@ -253,14 +272,17 @@ export class Interpreter {
         }
     }
 
-    private interpretRegexPosition(pos: RegularExpressionPosition, input: string): PositionResult {
+    private interpretRegexPosition(pos: RegularExpressionPosition, input: string, count?: number): PositionResult {
         if (pos.count.type === 'Constant') {
             return this.interpretConstantCountPosition(pos, input);
         } else if (pos.count.type === 'Linear') {
-            return {
-                type: 'error',
-                error: 'Unsupported count type'
-            };
+            if (count === undefined) {
+                return {
+                    type: 'error',
+                    error: 'integer variable for linear not defined'
+                };
+            }
+            return this.interpretLinearCountPosition(pos, input, count);
         }
         return {
             type: 'error',
@@ -274,6 +296,16 @@ export class Interpreter {
         } else {
             return this.findBackwardPosition(pos, input);
         }
+    }
+
+    private interpretLinearCountPosition(pos: RegularExpressionPosition, input: string, count: number): PositionResult {
+        const pos1: RegularExpressionPosition = {...pos,
+             count: {
+                 type: 'Constant',
+                 value: (pos.count as LinearExpression).k1 * count + (pos.count as LinearExpression).k2
+            }
+        };
+        return this.interpretConstantCountPosition(pos1, input);
     }
 
     private findForwardPosition(pos: RegularExpressionPosition, input: string): PositionResult {
@@ -331,6 +363,8 @@ function mapRegex(regex: RegularExpression): string {
             switch (token.characters) {
                 case 'Numeric': return '\\d';
                 case 'Alphabetic': return '[a-zA-Z]';
+                case 'UpperAlphabet': return '[A-Z]';
+                case 'LowerAlphabet': return '[a-z]';
                 case 'Alphanumeric': return '\\w';
                 case 'Accented': return '[\\u00C0-\\u017F]';
                 case 'Whitespace': return '\\s';
@@ -340,6 +374,8 @@ function mapRegex(regex: RegularExpression): string {
             switch (token.characters) {
                 case 'Numeric': return '\\D';
                 case 'Alphabetic': return '[^a-zA-Z]';
+                case 'UpperAlphabet': return '[^A-Z]';
+                case 'LowerAlphabet': return '[^a-z]';
                 case 'Alphanumeric': return '\\W';
                 case 'Accented': return '[^\\u00C0-\\u017F]';
                 case 'Whitespace': return '\\S';
@@ -369,13 +405,20 @@ export class E {
         };
     }
 
-    static SubStr(vi, r, c): SubstringExpression {
+    static SubStr(vi, r1, r2): SubstringExpression {
         return {
             type: 'SubStr',
             variable: { type: 'StringVariable', name: vi },
-            start: r,
-            end: c
+            start: r1,
+            end:r2
         };
+    }
+
+    static SubStr2(vi: string, r: RegularExpression, c: number | string): SubstringExpression {
+        return this.SubStr(vi,
+            this.Pos(this.EmptyRegex(), r, c),
+            this.Pos(r, this.EmptyRegex(), c)
+        );
     }
 
     static ConstStr(value: string): ConstantExpression {
@@ -385,12 +428,23 @@ export class E {
         };
     }
 
-    static Pos(r1: RegularExpression, r2: RegularExpression, c: number): RegularExpressionPosition {
+    static Loop(w: string, e: TraceExpression): LoopExpression {
+        return {
+            type: 'Loop',
+            variable: { type: 'IntegerVariable', name: w },
+            body: e
+        };
+    }
+
+    static Pos(r1: RegularExpression, r2: RegularExpression, c: number | string): RegularExpressionPosition {
+        const count: IntegerExpression = typeof c === 'number' ?
+            { type: 'Constant', value: c } :
+            { type: 'Linear', variable: { type: 'IntegerVariable', name: c}, k1: 1, k2: 0 };
         return {
             type: 'Pos',
             regex1: r1,
             regex2: r2,
-            count: { type: 'Constant', value: c }
+            count: count
         };
     }
 
@@ -419,6 +473,20 @@ export class E {
         return {
             type: 'CharacterClass',
             characters: "Numeric"
+        };
+    }
+
+    static UpperToken(): CharacterClassToken {
+        return {
+            type: 'CharacterClass',
+            characters: "UpperAlphabet"
+        };
+    }
+
+    static LowerToken(): CharacterClassToken {
+        return {
+            type: 'CharacterClass',
+            characters: "LowerAlphabet"
         };
     }
 

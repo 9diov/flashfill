@@ -101,6 +101,47 @@ describe('Interpreter', () => {
         }
     });
 
+    it('should be able to extract acronyms from text by concatenating uppercase letters', () => {
+        const interpreter = new Interpreter();
+        const traceExpression: TraceExpression = E.Trace(
+            E.Loop(
+                "w",
+                E.Trace(
+                    E.SubStr2("v1", E.Regex(E.UpperToken()), "w")
+                )
+            )
+        );
+        console.dir(traceExpression, { depth: null });
+
+        const examples = [
+            {
+                input: ["International Business Machines"],
+                output: "IBM"
+            },
+            {
+                input: ["Principles Of Programming Languages"],
+                output: "POPL"
+            },
+            {
+                input: ["International Conference on Software Engineering"],
+                output: "ICSE"
+            },
+            // Additional test cases
+            {
+                input: ["Association for Computing Machinery"],
+                output: "ACM"
+            },
+            {
+                input: ["World Wide Web Consortium"],
+                output: "WWWC"
+            }
+        ];
+
+        for (const example of examples) {
+            expect(interpreter.interpretTrace(traceExpression, { v1: example.input[0] }))
+                .toEqual({ type: 'success', value: example.output });
+        }
+    });
 
 
 });
