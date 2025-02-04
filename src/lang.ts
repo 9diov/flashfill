@@ -130,7 +130,7 @@ export type NegativeCharacterClassToken = {
 
 export type SpecialToken = {
   type: 'SpecialToken';
-  characters: 'StartTok' | 'EndTok';
+  characters: 'StartTok' | 'EndTok' | 'SlashToken';
 };
 
 // ********************************
@@ -200,7 +200,7 @@ export class Interpreter {
         const input = inputs[sub.variable.name];
         const startPos = this.interpretPosition(sub.start, input);
         const endPos = this.interpretPosition(sub.end, input);
-        console.log("input", input, startPos, endPos);
+        console.log("input", input, "start:", startPos, "end:", endPos);
         if (startPos.type === 'error' || endPos.type === 'error') {
             return {
                 type: 'error',
@@ -248,7 +248,7 @@ export class Interpreter {
         } else {
             return {
                 type: 'success',
-                value: pos.value > 0 ? pos.value : input.length + pos.value + 1
+                value: pos.value >= 0 ? pos.value : input.length + pos.value + 1
             };
         }
     }
@@ -325,6 +325,7 @@ function mapRegex(regex: RegularExpression): string {
             switch (token.characters) {
                 case 'StartTok': return '^';
                 case 'EndTok': return '$';
+                case 'SlashToken': return '\\\\';
             }
         } else if (token.type === 'CharacterClass') {
             switch (token.characters) {
@@ -360,7 +361,7 @@ function mapRegex(regex: RegularExpression): string {
 // Utitilies functions to succintly create expressions
 // ********************************
 
-export class Exp {
+export class E {
     static Trace(...expressions: Array<AtomicExpression>): TraceExpression {
         return {
             type: 'Concatenate',
@@ -418,6 +419,13 @@ export class Exp {
         return {
             type: 'CharacterClass',
             characters: "Numeric"
+        };
+    }
+
+    static SlashToken(): SpecialToken {
+        return {
+            type: 'SpecialToken',
+            characters: "SlashToken"
         };
     }
 

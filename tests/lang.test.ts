@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { Interpreter, SubstringExpression, TraceExpression, Position, ConstantPosition, Exp } from '../src/lang';
+import { describe, expect, it } from 'vitest';
+import { ConstantPosition, E, Interpreter, Position, SubstringExpression, TraceExpression } from '../src/lang';
 
 describe('Interpreter', () => {
     it('should use utility functions correctly', () => {
@@ -31,22 +31,21 @@ describe('Interpreter', () => {
             expressions: [subStringExpression]
         };
         const traceExpression2: TraceExpression =
-            Exp.Trace(
-                Exp.SubStr("v1",
-                    Exp.Pos(Exp.EmptyRegex(), Exp.Regex(Exp.NumToken()), 1),
-                    Exp.CPos(-1)
+            E.Trace(
+                E.SubStr("v1",
+                    E.Pos(E.EmptyRegex(), E.Regex(E.NumToken()), 1),
+                    E.CPos(-1)
                 )
             );
         expect(traceExpression).toEqual(traceExpression2);
     });
 
-    it('should interpret substring expression correctly', () => {
+    it('should be able to extract quantities from string', () => {
         const interpreter = new Interpreter();
-        const traceExpression: TraceExpression =
-            Exp.Trace(
-                Exp.SubStr("v1",
-                    Exp.Pos(Exp.EmptyRegex(), Exp.Regex(Exp.NumToken()), 1),
-                    Exp.CPos(-1)
+        const traceExpression: TraceExpression = E.Trace(
+                E.SubStr("v1",
+                    E.Pos(E.EmptyRegex(), E.Regex(E.NumToken()), 1),
+                    E.CPos(-1)
                 )
             );
 
@@ -62,5 +61,46 @@ describe('Interpreter', () => {
             expect(interpreter.interpretTrace(traceExpression, { v1: example.input[0] })).toEqual({ type: 'success', value: example.output });
         }
     });
+
+    it('should be able to extract parent directory path from file path', () => {
+        const interpreter = new Interpreter();
+        const traceExpression: TraceExpression = E.Trace(
+            E.SubStr("v1",
+                E.CPos(0),
+                E.Pos(E.Regex(E.SlashToken()), E.EmptyRegex(), -1)
+            )
+        );
+
+        const examples = [
+            {
+                input: ["Company\\Code\\index.html"],
+                output: "Company\\Code\\"
+            },
+            {
+                input: ["Company\\Docs\\Spec\\specs.doc"],
+                output: "Company\\Docs\\Spec\\"
+            },
+            // Additional test cases
+            {
+                input: ["Project\\Source\\main.cpp"],
+                output: "Project\\Source\\"
+            },
+            {
+                input: ["Data\\Reports\\2024\\report.xlsx"],
+                output: "Data\\Reports\\2024\\"
+            },
+            {
+                input: ["Test\\Unit\\Core\\tests.js"],
+                output: "Test\\Unit\\Core\\"
+            }
+        ];
+
+        for (const example of examples) {
+            expect(interpreter.interpretTrace(traceExpression, { v1: example.input[0] }))
+                .toEqual({ type: 'success', value: example.output });
+        }
+    });
+
+
 
 });
