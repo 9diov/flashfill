@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ConstantPosition, E, Interpreter, Position, SubstringExpression, TraceExpression } from '../src/lang';
+import { ConstantPosition, E, Interpreter, Position, StringExpression, SubstringExpression, TraceExpression } from '../src/lang';
 
 describe('Interpreter', () => {
     it('should use utility functions correctly', () => {
@@ -234,4 +234,58 @@ describe('Interpreter', () => {
                 .toEqual({ type: 'success', value: example.output });
         }
     });
+
+    it('should conditionally concatenate names with titles', () => {
+        const interpreter = new Interpreter();
+        const stringExpression: StringExpression = E.Switch([
+                E.And(
+                    E.Match("v1", E.Regex(E.CharToken())),
+                    E.Match("v2", E.Regex(E.CharToken()))
+                ),
+                E.Trace(
+                    E.Variable("v1"),
+                    E.ConstStr("("),
+                    E.Variable("v2"),
+                    E.ConstStr(")")
+                )
+            ],
+            [
+                E.Or(
+                    E.NotMatch("v1", E.Regex(E.CharToken())),
+                    E.NotMatch("v2", E.Regex(E.CharToken()))
+                ),
+                E.Trace(E.Empty())
+            ]
+        );
+
+        const examples = [
+            {
+                input: ["Alex", "Asst."],
+                output: "Alex(Asst.)"
+            },
+            {
+                input: ["Jim", "Manager"],
+                output: "Jim(Manager)"
+            },
+            {
+                input: ["Ryan", ""],
+                output: ""
+            },
+            {
+                input: ["", "Asst."],
+                output: ""
+            },
+            // Additional test cases
+            {
+                input: ["Bob", "Director"],
+                output: "Bob(Director)"
+            }
+        ];
+
+        for (const example of examples) {
+            expect(interpreter.interpret(stringExpression,
+                { v1: example.input[0], v2: example.input[1] })
+            ).toEqual({ type: 'success', value: example.output });
+        }
+     });
 });

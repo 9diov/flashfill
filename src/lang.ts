@@ -205,6 +205,7 @@ export class Interpreter {
             }
         }
         const inputStr = inputs[sub.variable.name] as string; // input string
+        // TODO: Change this to use the actual count variable
         const count = inputs["w"];
         const startPos = count === undefined ? this.interpretPosition(sub.start, inputStr) :
             this.interpretPosition(sub.start, inputStr, count as number);
@@ -514,6 +515,63 @@ function mapRegex(regex: RegularExpression): string {
 // ********************************
 
 export class E {
+    static Switch(...cases: Array<[BooleanExpression, TraceExpression]>): StringExpression {
+        return {
+            type: 'Switch',
+            cases: cases.map(([condition, result]) => ({ condition, result }))
+        };
+    }
+
+    // top level AND, can't be nested with other ands/ors
+    static And(...predicates: Array<Predicate>): BooleanExpression {
+        return {
+            type: 'Disjunction',
+            conjuncts: [{ type: 'Conjunction', predicates: predicates }]
+        }
+    }
+
+    // top level OR, can't be nested with other ands/ors
+    static Or(...predicates: Array<Predicate>): BooleanExpression {
+        return {
+            type: 'Disjunction',
+            conjuncts: predicates.map(p => ({ type: 'Conjunction', predicates: [p] }))
+        }
+    }
+
+    static Match(vi: string, r: RegularExpression, k: number = 1): Predicate {
+        return {
+            type: 'Match',
+            variable: { type: 'StringVariable', name: vi },
+            regex: r,
+            position: k
+        };
+    }
+
+    static NotMatch(vi: string, r: RegularExpression, k: number = 1): Predicate {
+        return {
+            type: 'NotMatch',
+            variable: { type: 'StringVariable', name: vi },
+            regex: r,
+            position: k
+        };
+    }
+
+    static Variable(name: string): AtomicExpression {
+        return {
+            type: 'SubStr',
+            variable: { type: 'StringVariable', name: name },
+            start: { type: 'CPos', value: 0 },
+            end: { type: 'CPos', value: -1 }
+        };
+    }
+
+    static Empty(): AtomicExpression {
+        return {
+            type: 'ConstStr',
+            value: ''
+        };
+    }
+
     static Trace(...expressions: Array<AtomicExpression>): TraceExpression {
         return {
             type: 'Concatenate',
@@ -589,6 +647,13 @@ export class E {
         return {
             type: 'CharacterClass',
             characters: "Numeric"
+        };
+    }
+
+    static CharToken(): CharacterClassToken {
+        return {
+            type: 'CharacterClass',
+            characters: "Alphabetic"
         };
     }
 
