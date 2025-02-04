@@ -120,7 +120,8 @@ export type Token =
 
 export type CharacterClassToken = {
   type: 'CharacterClass';
-  characters: 'Numeric' | 'Alphabetic' | 'UpperAlphabet' | 'LowerAlphabet' | 'Alphanumeric' | 'Accented' | 'Whitespace' | 'Any';
+  characters: 'Numeric' | 'Alphabetic' | 'UpperAlphabet' | 'LowerAlphabet'
+    | 'Alphanumeric' | 'Accented' | 'Whitespace' | 'Any';
 };
 
 export type NegativeCharacterClassToken = {
@@ -130,7 +131,8 @@ export type NegativeCharacterClassToken = {
 
 export type SpecialToken = {
   type: 'SpecialToken';
-  characters: 'StartTok' | 'EndTok' | 'SlashToken' | 'LeftParenToken' | 'RightParenToken';
+  characters: 'StartTok' | 'EndTok'
+    | 'SlashToken' | 'LeftParenToken' | 'RightParenToken' | 'DotToken' | 'HyphenToken';
 };
 
 // ********************************
@@ -501,6 +503,8 @@ function mapRegex(regex: RegularExpression): string {
                 case 'SlashToken': return '[\\\\\\/]';
                 case 'LeftParenToken': return '\\(';
                 case 'RightParenToken': return '\\)';
+                case 'DotToken': return '\\.';
+                case 'HyphenToken': return '-';
             }
         } else if (token.type === 'CharacterClass') {
             switch (token.characters) {
@@ -561,6 +565,13 @@ export class E {
         return {
             type: 'Disjunction',
             conjuncts: predicates.map(p => ({ type: 'Conjunction', predicates: [p] }))
+        }
+    }
+
+    static Bool(pred: Predicate): BooleanExpression {
+        return {
+            type: 'Disjunction',
+            conjuncts: [{ type: 'Conjunction', predicates: [pred] }]
         }
     }
 
@@ -697,6 +708,20 @@ export class E {
         };
     }
 
+    static StartToken(): SpecialToken {
+        return {
+            type: 'SpecialToken',
+            characters: "StartTok"
+        };
+    }
+
+    static EndToken(): SpecialToken {
+        return {
+            type: 'SpecialToken',
+            characters: "EndTok"
+        };
+    }
+
     static SlashToken(): SpecialToken {
         return {
             type: 'SpecialToken',
@@ -715,6 +740,20 @@ export class E {
         return {
             type: 'SpecialToken',
             characters: "RightParenToken"
+        };
+    }
+
+    static DotToken(): SpecialToken {
+        return {
+            type: 'SpecialToken',
+            characters: "DotToken"
+        };
+    }
+
+    static HyphenToken(): SpecialToken {
+        return {
+            type: 'SpecialToken',
+            characters: "HyphenToken"
         };
     }
 

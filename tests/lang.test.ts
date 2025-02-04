@@ -288,4 +288,66 @@ describe('Interpreter', () => {
             ).toEqual({ type: 'success', value: example.output });
         }
      });
+
+    it('should parse dates in multiple formats and extract day', () => {
+        const interpreter = new Interpreter();
+        const stringExpression: StringExpression = E.Switch(
+            [
+                E.Bool(E.Match("v1", E.Regex(E.SlashToken()))),
+                E.Trace(
+                    E.SubStr("v1",
+                        E.Pos(E.Regex(E.StartToken()), E.EmptyRegex(), 1),
+                        E.Pos(E.EmptyRegex(), E.Regex(E.SlashToken()), 1)
+                    )
+                )
+            ],
+            [
+                E.Bool(E.Match("v1", E.Regex(E.DotToken()))),
+                E.Trace(
+                    E.SubStr("v1",
+                        E.Pos(E.Regex(E.DotToken()), E.EmptyRegex(), 1),
+                        E.Pos(E.EmptyRegex(), E.Regex(E.DotToken()), 2)
+                    )
+                )
+            ],
+            [
+                E.Bool(E.Match("v1", E.Regex(E.HyphenToken()))),
+                E.Trace(
+                    E.SubStr("v1",
+                        E.Pos(E.Regex(E.HyphenToken()), E.EmptyRegex(), 2),
+                        E.Pos(E.Regex(E.EndToken()), E.EmptyRegex(), 1)
+                    )
+                )
+            ]
+        );
+
+        const examples = [
+            {
+                input: ["01/21/2001"],
+                output: "01"
+            },
+            {
+                input: ["22.02.2002"],
+                output: "02"
+            },
+            {
+                input: ["2003-23-03"],
+                output: "03"
+            },
+            // Additional test cases
+            {
+                input: ["05/15/2023"],
+                output: "05"
+            },
+            {
+                input: ["31.12.2024"],
+                output: "12"
+            }
+        ];
+
+        for (const example of examples) {
+            expect(interpreter.interpret(stringExpression, { v1: example.input[0] }))
+                .toEqual({ type: 'success', value: example.output });
+        }
+    });
 });
