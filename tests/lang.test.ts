@@ -143,5 +143,49 @@ describe('Interpreter', () => {
         }
     });
 
+    it('should extract and concatenate odds from parentheses with # separator', () => {
+        const interpreter = new Interpreter();
+        const traceExpression: TraceExpression = E.Trace(
+            E.Loop(
+                "w",
+                E.Trace(
+                    E.SubStr("v1",
+                        E.Pos(E.Regex(E.LeftParenToken()), E.Regex(E.NumToken(), E.SlashToken()), "w"),
+                        E.Pos(E.Regex(E.SlashToken(), E.NumToken()), E.Regex(E.RightParenToken()), "w")
+                    ),
+                    E.ConstStr(" # ")
+                )
+            )
+        );
+
+        const examples = [
+            {
+                input: ["(6/7)(4/5)(14/1)"],
+                output: "6/7 # 4/5 # 14/1 # "
+            },
+            {
+                input: ["49(28/11)(14/1)"],
+                output: "28/11 # 14/1 # "
+            },
+            {
+                input: ["()(28/11)(14/1)"],
+                output: "28/11 # 14/1 # "
+            },
+            // Additional test cases
+            {
+                input: ["(3/4)(8/2)"],
+                output: "3/4 # 8/2 # "
+            },
+            {
+                input: ["100(7/3)(21/5)(2/9)"],
+                output: "7/3 # 21/5 # 2/9 # "
+            }
+        ];
+
+        for (const example of examples) {
+            expect(interpreter.interpretTrace(traceExpression, { v1: example.input[0] }))
+                .toEqual({ type: 'success', value: example.output });
+        }
+    });
 
 });

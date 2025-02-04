@@ -130,7 +130,7 @@ export type NegativeCharacterClassToken = {
 
 export type SpecialToken = {
   type: 'SpecialToken';
-  characters: 'StartTok' | 'EndTok' | 'SlashToken';
+  characters: 'StartTok' | 'EndTok' | 'SlashToken' | 'LeftParenToken' | 'RightParenToken';
 };
 
 // ********************************
@@ -310,7 +310,7 @@ export class Interpreter {
 
     private findForwardPosition(pos: RegularExpressionPosition, input: string): PositionResult {
         let count = 0;
-        console.log(input, mapRegex(pos.regex1), mapRegex(pos.regex2));
+        // console.log(input, mapRegex(pos.regex1), mapRegex(pos.regex2));
         for (let i = 0; i < input.length; i++) {
             if (input.slice(0, i).match(mapRegex(pos.regex1) + "$") && 
                 input.slice(i).match("^" + mapRegex(pos.regex2))) {
@@ -357,11 +357,13 @@ function mapRegex(regex: RegularExpression): string {
             switch (token.characters) {
                 case 'StartTok': return '^';
                 case 'EndTok': return '$';
-                case 'SlashToken': return '\\\\';
+                case 'SlashToken': return '[\\\\\\/]';
+                case 'LeftParenToken': return '\\(';
+                case 'RightParenToken': return '\\)';
             }
         } else if (token.type === 'CharacterClass') {
             switch (token.characters) {
-                case 'Numeric': return '\\d';
+                case 'Numeric': return '\\d+';
                 case 'Alphabetic': return '[a-zA-Z]';
                 case 'UpperAlphabet': return '[A-Z]';
                 case 'LowerAlphabet': return '[a-z]';
@@ -497,4 +499,17 @@ export class E {
         };
     }
 
+    static LeftParenToken(): SpecialToken {
+        return {
+            type: 'SpecialToken',
+            characters: "LeftParenToken"
+        };
+    }
+
+    static RightParenToken(): SpecialToken {
+        return {
+            type: 'SpecialToken',
+            characters: "RightParenToken"
+        };
+    }
 }
