@@ -111,7 +111,7 @@ describe('Interpreter', () => {
                 )
             )
         );
-        console.dir(traceExpression, { depth: null });
+        // console.dir(traceExpression, { depth: null });
 
         const examples = [
             {
@@ -203,7 +203,7 @@ describe('Interpreter', () => {
             ),
             E.SubStr2("v1", E.Regex(E.NonSpaceToken()), -1)
         );
-        console.dir(traceExpression, { depth: null });
+        // console.dir(traceExpression, { depth: null });
 
         const examples = [
             {
