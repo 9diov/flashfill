@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generatePosition, generateRegex } from '../../src/algo/algo';
+import { generatePosition, generateRegex, getIndistinguishablePartitions, getIndistinguishableTokens } from '../../src/algo/algo';
 import { PositionSet } from '../../src/algo/types';
 import { E } from '../../src/lang';
 
@@ -7,7 +7,6 @@ describe('generateRegex', () => {
     it('should generate regex set for a given string', () => {
         const str = "Hello World";
         const result = generateRegex(E.Regex(E.UpperToken()), str);
-        console.dir(result, { depth: null });
 
         expect(result).toEqual({
             type: 'RegExpSet',
@@ -25,7 +24,6 @@ describe('generateRegex', () => {
     it('should generate regex set for a given string', () => {
         const str = "Hello, 37th World";
         const result = generateRegex(E.Regex(E.NumToken()), str);
-        console.dir(result, { depth: null });
 
         expect(result).toEqual({
             type: 'RegExpSet',
@@ -36,6 +34,12 @@ describe('generateRegex', () => {
             }]
         });
     });
+});
+
+describe('getIndistinguishablePartitions', () => {
+    const str = "Hello World";
+    const result = getIndistinguishablePartitions(str);
+    console.dir(result, { depth: null });
 });
 
 // describe('generatePosition', () => {

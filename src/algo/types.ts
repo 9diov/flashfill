@@ -63,3 +63,8 @@ export type TokenSet = {
     type: 'TokenSet',
     tokens: Set<Token>
 }
+
+export type TokenIPartition = {
+    tokens: Set<Token>,
+    repToken: Token
+}
