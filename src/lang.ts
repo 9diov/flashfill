@@ -540,6 +540,17 @@ function mapRegex(regex: RegularExpression): string {
     }
 }
 
+export function getAllMatchedPositions(str: string, token: Token): number[] {
+    const regex = mapRegex({ type: 'TokenSeq', tokens: [token] });
+    const positions = [];
+    let result;
+    const re = new RegExp(regex, 'g');
+    while (result = re.exec(str)) {
+        positions.push(result.index);
+    }
+    return positions;
+}
+
 // ********************************
 // Utitilies functions to succintly create expressions
 // ********************************
@@ -708,6 +719,20 @@ export class E {
         };
     }
 
+    static NumCharToken(): CharacterClassToken {
+        return {
+            type: 'CharacterClass',
+            characters: "Alphanumeric"
+        };
+    }
+
+    static AccentedToken(): CharacterClassToken {
+        return {
+            type: 'CharacterClass',
+            characters: "Accented"
+        };
+    }
+
     static StartToken(): SpecialToken {
         return {
             type: 'SpecialToken',
@@ -771,3 +796,14 @@ export class E {
         };
     }
 }
+
+export const ALL_TOKENS = [
+    E.NumToken(),
+    E.CharToken(),
+    E.UpperToken(),
+    E.LowerToken(),
+    E.NumCharToken(),
+    E.AccentedToken(),
+    E.SpaceToken(),
+    E.NonSpaceToken()
+];

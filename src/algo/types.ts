@@ -1,6 +1,7 @@
 // Sets of string expressions
+// Refer to Figure 3 of Gulwani paper
 
-import { BooleanExpression, ConstantExpression, ConstantPosition, IntegerExpression, StringVariable, Token } from "./lang"
+import { BooleanExpression, ConstantExpression, ConstantPosition, IntegerExpression, Position, StringVariable, Token } from "../lang"
 
 export type StringExpSet = {
     type: 'SwitchSet',
@@ -39,9 +40,7 @@ export type SubstringExpSet = {
     end: PositionSet,
 }
 
-export type PositionSet =
-    | ConstantPosition
-    | RegExpPositionSet;
+export type PositionSet = Set <ConstantPosition | RegExpPositionSet>;
 
 export type RegExpPositionSet = {
     type: 'RegExpPositionSet',
@@ -62,5 +61,5 @@ export type RegExpSet = {
 
 export type TokenSet = {
     type: 'TokenSet',
-    tokens: Array<Token>
+    tokens: Set<Token>
 }
