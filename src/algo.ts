@@ -1,7 +1,7 @@
 import { get } from "http";
-import { ALL_TOKENS, getAllMatchedPositions, RegularExpression, Token } from "../lang";
-import { PositionSet, RegExpSet, SubstringExpSet, TokenIPartition } from "./types";
-import { getIndistinguishableTokens, IPartitionCache } from "./match";
+import { ALL_TOKENS, getAllMatchedPositions, RegularExpression, Token } from "./lang";
+import { PositionSet, RegExpSet, SubstringExpSet, TokenIPartition } from "./algo/types";
+import { getIndistinguishablePartitions, getIndistinguishableTokens, IPartitionCache } from "./algo/match";
 
 function generateSubstring(state: InputState, substr: string): Set<SubstringExpSet> {
     const result = new Set<SubstringExpSet>();
@@ -71,8 +71,8 @@ export function generatePosition(str: string, k: number): PositionSet {
     return result;
 }
 
-export function generateRegex(r: RegularExpression, str: string): RegExpSet {
-    const cache = new IPartitionCache(str); // Generate and cache partitions
+export function generateRegex(r: RegularExpression, str: string,
+    cache: IPartitionCache = new IPartitionCache(str)): RegExpSet {
     return {
         type: 'RegExpSet',
         tokens: r.tokens.map(token => ({
