@@ -107,10 +107,20 @@ export type LinearExpression = {
 };
 
 // Regular expressions (r)
-export type RegularExpression = {
-  type: 'TokenSeq';
-  tokens: Array<Token>;
-};
+// export type RegularExpression = {
+//   type: 'TokenSeq';
+//   tokens: Array<Token>;
+// };
+
+export class RegularExpression {
+    type: string = 'TokenSeq';
+    tokens: Array<Token> = [];
+
+    constructor(tokens: Array<Token>) { this.tokens = tokens; }
+    append(r: RegularExpression) {
+        return new RegularExpression([...this.tokens, ...r.tokens]);
+    }
+}
 
 // Tokens (T)
 export type Token =
@@ -667,17 +677,11 @@ export class E {
     }
 
     static Regex(...tokens: Array<Token>): RegularExpression {
-        return {
-            type: 'TokenSeq',
-            tokens: tokens
-        };
+        return new RegularExpression(tokens);
     }
 
     static EmptyRegex(): RegularExpression {
-        return {
-            type: 'TokenSeq',
-            tokens: []
-        };
+        return new RegularExpression([]);
     }
 
     static NumToken(): CharacterClassToken {
@@ -782,6 +786,13 @@ export class E {
         return {
             type: 'NegativeCharacterClass',
             characters: "Whitespace"
+        };
+    }
+
+    static Int(value: number): IntegerExpression {
+        return {
+            type: 'Constant',
+            value: value
         };
     }
 }
