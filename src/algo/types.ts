@@ -19,7 +19,7 @@ export type TraceExpSet = {
     startNode: number,
     endNode: number,
     edges: Set<Edge>,
-    mappings: Map<Edge, AtomicExpSet>
+    mappings: Map<string, AtomicExpSet> // e.g. { "1-3": expset1, "4-5": expset2 }
 }
 
 export type AtomicExpSet =
@@ -32,12 +32,12 @@ export type LoopExpSet = {
     loop: AtomicExpSet
 }
 
-export type SubstringExpSet = {
+export type SubstringExpSet = Set<{
     type: 'SubstringSet',
     variable: StringVariable,
     start: PositionSet,
     end: PositionSet,
-}
+}>
 
 export type PositionSet = Set <ConstantPosition | RegExpPositionSet>;
 
@@ -62,3 +62,5 @@ export type TokenSet = {
     type: 'TokenSet',
     tokens: Set<Token>
 }
+
+export type InputState = Record<string, string>; // { "v1": "input 1", "v2": "input 2" }

@@ -1,25 +1,24 @@
 import { generateRegexesMatchingAfter, generateRegexesMatchingBefore, getAllMatchedPositions, getIndistinguishablePartitions, getIndistinguishableTokens, IPartitionCache } from "./algo/match";
-import { PositionSet, RegExpSet, SubstringExpSet } from "./algo/types";
+import { InputState, PositionSet, RegExpSet, SubstringExpSet } from "./algo/types";
 import { E, RegularExpression, Token } from "./lang";
 
-function generateSubstring(state: InputState, substr: string): Set<SubstringExpSet> {
-    const result = new Set<SubstringExpSet>();
+function generateSubstring(state: InputState, substr: string): SubstringExpSet {
+    const result: SubstringExpSet = new Set();
 
-    // For each input variable and position where substr appears
-    for (const [varName, value] of Object.entries(state)) {
-        let pos = 0;
-        while ((pos = value.indexOf(substr, pos)) !== -1) {
-            const startPositions = generatePosition(value, pos);
-            const endPositions = generatePosition(value, pos + substr.length);
-
+    // for each case where substr is found in one of the strings in state
+    for (const [key, value] of Object.entries(state)) {
+        let k = value.indexOf(substr);
+        if (k === -1) continue;
+        while (k !== -1) {
+            const y1 = generatePosition(value, k);
+            const y2 = generatePosition(value, k + substr.length);
             result.add({
                 type: 'SubstringSet',
-                variable: varName,
-                start: startPositions,
-                end: endPositions
+                variable: { type: 'StringVariable', name: key },
+                start: y1,
+                end: y2
             });
-
-            pos += 1;
+            k = value.indexOf(substr, k + 1);
         }
     }
 
@@ -41,6 +40,7 @@ export function generatePosition(str: string, k: number): PositionSet {
     });
 
     const cache = new IPartitionCache(str);
+    // TODO: Add empty regex to r1s and r2s
     const r1s = generateRegexesMatchingBefore(str, k, cache);
     const r2s = generateRegexesMatchingAfter(str, k, cache);
 
@@ -68,7 +68,7 @@ export function generatePosition(str: string, k: number): PositionSet {
         }
     }
 
-    console.dir(result, { depth: null });
+    // console.dir(result, { depth: null });
     return result;
 }
 

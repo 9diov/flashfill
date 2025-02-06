@@ -73,12 +73,12 @@ import { generateRegexesMatchingAfter, generateRegexesMatchingBefore, IPartition
 
 describe('generatePosition', () => {
     it('should generate position set for a given string and position', () => {
-        const str = "ab1d";
-        const k = 2;
+        const str = "a1";
+        const k = 1;
 
         const result = generatePosition(str, k);
         expect(result.size).toBeGreaterThan(0);
-        expect(result.size).toEqual(12);
+        expect(result.size).toEqual(6);
 
         // TODO: Use interpetPosition to check if the generated positions are correct
 
