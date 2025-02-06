@@ -84,12 +84,12 @@ export function generateRegex(r: RegularExpression, str: string,
 
 export function generateRegexesMatchingBefore(str: string, k: number,
      cache: IPartitionCache = new IPartitionCache(str)): Set<RegularExpression> {
-    // console.log("orginal str:", str, "k:", k, "str considered:", str.slice(0, k));
+    // console.log("orginal str:", str, "len:", str.length, "k:", k, "str considered:", str.slice(0, k));
     // console.dir(cache.partitions, { depth: null });
-    if (k < 0 ) { throw new Error("k must be non-negative"); }
+    if (k < 0 || k >= str.length) { throw new Error("k must be non-negative and < string length"); }
     if (k === 0) { return new Set([E.Regex()]); }
 
-    // Keep track of all token sequences that match str.slice(k)
+    // Keep track of all token sequences that match str.slice(0, k)
     let tokenSeqSet: Set<Token[]> = new Set();
 
     // helper function to add token sequences to tokenSeqSet
@@ -112,7 +112,7 @@ export function generateRegexesMatchingBefore(str: string, k: number,
     };
 
     addTokenSeq(k - 1, cache, tokenSeqSet);
-    console.dir(tokenSeqSet, { depth: null });
+    // console.dir(tokenSeqSet, { depth: null });
 
     // Results are just a set of all suffixes of all tokenSeq in tokenSeqSet
     const result = new Set<RegularExpression>();
@@ -123,13 +123,58 @@ export function generateRegexesMatchingBefore(str: string, k: number,
         }
     }
 
-    console.dir(result, { depth: null });
+    // console.dir(result, { depth: null });
+
+    result.add(E.Regex()); // adding empty regex
 
     return result;
 }
 
-function generateRegexesMatchingAfter(str: string, k: number,
+export function generateRegexesMatchingAfter(str: string, k: number,
      cache: IPartitionCache = new IPartitionCache(str)): Set<RegularExpression> {
-    throw new Error("Function not implemented.");
+    // console.log("orginal str:", str, "k:", k, "str considered:", str.slice(k));
+    // console.dir(cache.partitions, { depth: null });
+
+    if (k < 0 || k >= str.length) { throw new Error("k must be non-negative and < string length"); }
+
+    // Keep track of all token sequences that match str.slice(k)
+    let tokenSeqSet: Set<Token[]> = new Set();
+
+    // helper function to add token sequences to tokenSeqSet
+    const addTokenSeq = (index: number, cache: IPartitionCache,
+         tokenSeqSet: Set<Token[]>, currTokenSeq: Token[] = []) => {
+
+        if (index === str.length) {
+            tokenSeqSet.add(currTokenSeq);
+            return;
+        }
+
+        const partitionRangePairs = cache.findPartitionsFromPos(index);
+        if (partitionRangePairs) {
+            for(const pair of partitionRangePairs) {
+                const currTokenSeqCloned = currTokenSeq.slice(); // clone to avoid mutation
+                currTokenSeqCloned.push(pair[0].repToken);
+                addTokenSeq(pair[1][1], cache, tokenSeqSet, currTokenSeqCloned);
+            }
+        }
+    };
+
+    addTokenSeq(k, cache, tokenSeqSet);
+    // console.dir(tokenSeqSet, { depth: null });
+
+    // Results are just a set of all prefixes of all tokenSeq in tokenSeqSet
+    const result = new Set<RegularExpression>();
+    for (const tokenSeq of tokenSeqSet) {
+        for (let i = 1; i <= tokenSeq.length; i++) {
+            const tokens = tokenSeq.slice(0, i);
+            result.add(E.Regex(...tokens));
+        }
+    }
+
+    // console.dir(result, { depth: null });
+
+    result.add(E.Regex()); // adding empty regex
+
+    return result;
 }
 

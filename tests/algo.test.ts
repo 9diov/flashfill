@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { generateRegex, generateRegexesMatchingBefore } from '../src/algo';
+import { generateRegex, generateRegexesMatchingAfter, generateRegexesMatchingBefore } from '../src/algo';
 import { E } from '../src/lang';
+import exp from 'constants';
 
 
 // describe('generateRegex', () => {
@@ -70,37 +71,34 @@ import { E } from '../src/lang';
 // });
 
 describe('generateRegexesMatchingBefore', () => {
-    // it('should return empty set for k = 0', () => {
-    //     const str = "ab1c2a  Bc";
-    //     const k = 0;
-    //     const result = generateRegexesMatchingBefore(str, k);
+    it('should return empty set for k = 0', () => {
+        const str = "ab1c2a  Bc";
+        const k = 0;
+        const result = generateRegexesMatchingBefore(str, k);
 
-    //     expect(result).toEqual(new Set([E.Regex()]));
-    // });
+        expect(result).toEqual(new Set([E.Regex()]));
+    });
 
     it('should return correct regexes for given string and position', () => {
         const str = " ab1c2a  Bc";
-        const k = 3;
-        const result = generateRegexesMatchingBefore(str, k);
-
-        // Expected result depends on the implementation of IPartitionCache and E.Regex
-        // This is a placeholder for the expected result
-        const expected = new Set([
-            E.Regex(E.CharToken(), E.CharToken(), E.CharToken())
-        ]);
-
-        expect(result).toEqual(expected);
+        expect(generateRegexesMatchingBefore(str, 1).size).toEqual(2);
+        expect(generateRegexesMatchingBefore(str, 2).size).toEqual(7);
+        expect(generateRegexesMatchingBefore(str, 3).size).toEqual(7);
+        expect(generateRegexesMatchingBefore(str, 4).size).toEqual(12);
     });
 
-    // it('should handle positions beyond string length', () => {
-    //     const str = "abcabc";
-    //     const k = 10;
-    //     const result = generateRegexesMatchingBefore(str, k);
+    it('should throw error when position is beyond string length', () => {
+        const str = " ab1c2a  Bc";
+        expect(() => generateRegexesMatchingBefore(str, -2)).toThrow();
+        expect(() => generateRegexesMatchingBefore(str, 100)).toThrow();
+    });
+});
 
-    //     // Expected result depends on the implementation of IPartitionCache and E.Regex
-    //     // This is a placeholder for the expected result
-    //     const expected = new Set();
-
-    //     expect(result).toEqual(expected);
-    // });
+describe('generateRegexesMatchingAfter', () => {
+    it('should return correct regexes for given string and position', () => {
+        const str = "a1c\\-3a";
+        expect(generateRegexesMatchingAfter(str, 1).size).toEqual(12);
+        expect(generateRegexesMatchingAfter(str, 2).size).toEqual(6);
+        expect(generateRegexesMatchingAfter(str, 3).size).toEqual(2);
+    });
 });
