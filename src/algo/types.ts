@@ -27,7 +27,6 @@ export type AtomicExpSet =
     | SubstringExpSet
     | ConstantExpression;
 
-
 export type LoopExpSet = {
     type: 'LoopSet',
     loop: AtomicExpSet

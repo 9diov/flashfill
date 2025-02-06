@@ -37,16 +37,35 @@ export type TokenIPartition = {
 export class IPartitionCache {
     str: string;
     partitions: Set<TokenIPartition>;
+    partitionsArr: TokenIPartition[];
 
     constructor(str: string) {
         this.str = str;
         this.partitions = getIndistinguishablePartitions(str);
+        this.partitionsArr = Array.from(this.partitions); // convert to array for faster access
     }
 
-    findPartition(token: Token): TokenIPartition | undefined {
-        return Array.from(this.partitions).find(partition =>
+    findPartitionContains(token: Token): TokenIPartition | undefined {
+        return this.partitionsArr.find(partition =>
             partition.tokens.has(token)
         );
+    }
+
+    getPartition(repToken: Token): TokenIPartition | undefined {
+        return this.partitionsArr.find(partition =>
+            partition.repToken === repToken
+        );
+    }
+
+    findPartitionsFromPos(pos: number): Array<[TokenIPartition, Range]> | undefined {
+        const results = this.partitionsArr.map(partition => {
+            const match = partition.matches.find(
+                ([start, end]) => start <= pos && pos < end);
+            if (match) return [partition, match];
+            else return undefined;
+        }).filter(x => x !== undefined);
+        if (results.length === 0) return undefined;
+        return results as Array<[TokenIPartition, Range]>;
     }
 }
 
@@ -67,7 +86,7 @@ export function getAllMatchedPositions(str: string, token: Token): Array<Range> 
 export function getIndistinguishableTokens(token: Token, str: string, cache?: IPartitionCache): Set<Token> {
     // if cache is provided, use it to find partition
     if (cache) {
-        const partition = cache.findPartition(token);
+        const partition = cache.findPartitionContains(token);
         if (partition) return partition.tokens;
     }
     return new Set(ALL_TOKENS.filter(t =>

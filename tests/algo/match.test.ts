@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { getIndistinguishablePartitions } from '../../src/algo/match';
+import { describe, expect, it } from 'vitest';
+import { getIndistinguishablePartitions, IPartitionCache } from '../../src/algo/match';
+import { Token } from '../../src/lang';
 
 describe('getIndistinguishablePartitions', () => {
     it('should return an empty set for an empty string', () => {
@@ -46,7 +47,8 @@ describe('getIndistinguishablePartitions', () => {
     it('should return correct partitions for a complex string', () => {
         const str = 'a1b2c3';
         const result = getIndistinguishablePartitions(str);
-        // console.dir(result, { depth: null });
+        console.log("str", str);
+        console.dir(result, { depth: null });
         expect(result.size).toBeGreaterThan(0);
         expect(result.size).toEqual(3);
         result.forEach(partition => {
@@ -54,4 +56,18 @@ describe('getIndistinguishablePartitions', () => {
             expect(partition.matches.length).toBeGreaterThan(0);
         });
     });
+
+    describe('IPartitionCache', () => {
+        it('should initialize with correct partitions', () => {
+            const str = 'a1b2 c3';
+            const cache = new IPartitionCache(str);
+            console.dir(cache, { depth: null });
+            expect(cache.partitions.size).toBeGreaterThan(0);
+            expect(cache.partitionsArr.length).toBeGreaterThan(0);
+            console.dir(cache.findPartitionsFromPos(3), { depth: null });
+        });
+
+    });
+
+
 });

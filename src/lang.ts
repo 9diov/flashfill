@@ -794,5 +794,7 @@ export const ALL_TOKENS = [
     E.NumCharToken(),
     E.AccentedToken(),
     E.SpaceToken(),
-    E.NonSpaceToken()
+    E.NonSpaceToken(),
+    // E.StartToken(),
+    // E.EndToken()
 ];
