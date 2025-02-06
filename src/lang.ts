@@ -494,7 +494,7 @@ export class Interpreter {
 }
 
 // Converts a string processing regex to a JavaScript regex
-function mapRegex(regex: RegularExpression): string {
+export function mapRegex(regex: RegularExpression): string {
     function mapToken(token: Token): string {
         if (token.type === 'SpecialToken') {
             switch (token.characters) {
@@ -538,17 +538,6 @@ function mapRegex(regex: RegularExpression): string {
     } else {
         throw new Error('Unsupported regex type');
     }
-}
-
-export function getAllMatchedPositions(str: string, token: Token): number[] {
-    const regex = mapRegex({ type: 'TokenSeq', tokens: [token] });
-    const positions = [];
-    let result;
-    const re = new RegExp(regex, 'g');
-    while (result = re.exec(str)) {
-        positions.push(result.index);
-    }
-    return positions;
 }
 
 // ********************************

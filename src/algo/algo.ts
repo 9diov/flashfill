@@ -1,6 +1,7 @@
 import { get } from "http";
 import { ALL_TOKENS, getAllMatchedPositions, RegularExpression, Token } from "../lang";
 import { PositionSet, RegExpSet, SubstringExpSet, TokenIPartition } from "./types";
+import { getIndistinguishableTokens, IPartitionCache } from "./match";
 
 function generateSubstring(state: InputState, substr: string): Set<SubstringExpSet> {
     const result = new Set<SubstringExpSet>();
@@ -71,76 +72,12 @@ export function generatePosition(str: string, k: number): PositionSet {
 }
 
 export function generateRegex(r: RegularExpression, str: string): RegExpSet {
+    const cache = new IPartitionCache(str); // Generate and cache partitions
     return {
         type: 'RegExpSet',
         tokens: r.tokens.map(token => ({
             type: 'TokenSet',
-            tokens: getIndistinguishableTokens(token, str)
+            tokens: getIndistinguishableTokens(token, str, cache)
         }))
     };
-}
-
-export function getIndistinguishablePartitions(str: string): Set<TokenIPartition> {
-    const result = new Set<TokenIPartition>();
-
-    const matchedTokenMap = new Map<string, Set<Token>>();
-    ALL_TOKENS.forEach(token => {
-        const matches = getAllMatchedPositions(str, token);
-        if (matches.length === 0) return;
-        const matchesStr = matches.toString();
-        if (matchedTokenMap.get(matchesStr) === undefined)
-            matchedTokenMap.set(matchesStr, new Set([token]));
-        else matchedTokenMap.get(matchesStr)!.add(token);
-    });
-
-    matchedTokenMap.forEach((tokens, matches) => {
-        const repToken = tokens.values().next().value!;
-        result.add({ tokens, repToken });
-    });
-
-    return result;
-}
-
-const permutator = (inputArr: any[]) => {
-    let result: any[] = [];
-
-    const permute = (arr: any[], m = []) => {
-        if (arr.length === 0) {
-            result.push(m)
-        } else {
-            for (let i = 0; i < arr.length; i++) {
-                let curr = arr.slice();
-                let next = curr.splice(i, 1);
-                permute(curr.slice(), m.concat(next))
-            }
-        }
-    }
-
-    permute(inputArr)
-
-    return result;
-}
-
-export function generateRegexes(partitions: Set<TokenIPartition>, str: string): Array<RegularExpression> {
-    const repTokens = [...partitions].map(partition => partition.repToken);
-
-    // generate all possible regexes by permutations of repTokens
-    const result: Array<RegularExpression> = [];
-
-
-    return result;
-}
-
-
-const areEqual = (a1: number[], a2: number[]) =>
-    a1.length === a2.length && a1.every((val, idx) => val === a2[idx]);
-
-// Return all tokens that match same positions in str as given token
-export function getIndistinguishableTokens(token: Token, str: string): Set<Token> {
-    return new Set(ALL_TOKENS.filter(t =>
-        areEqual(
-            getAllMatchedPositions(str, token),
-            getAllMatchedPositions(str, t)
-        )
-    ));
 }
