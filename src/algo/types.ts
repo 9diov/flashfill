@@ -12,6 +12,7 @@ export type StringExpSet = {
 }
 
 export type Edge = { start: number, end: number };
+export type Mappings = Map<string, AtomicExpSet>;
 
 export type TraceExpSet = {
     type: 'TraceSet',
@@ -19,13 +20,13 @@ export type TraceExpSet = {
     startNode: number,
     endNode: number,
     edges: Set<Edge>,
-    mappings: Map<string, AtomicExpSet> // e.g. { "1-3": expset1, "4-5": expset2 }
+    mappings: Mappings // e.g. { "1-3": expset1, "4-5": expset2 }
 }
 
-export type AtomicExpSet =
+export type AtomicExpSet = Set<
     | LoopExpSet
     | SubstringExpSet
-    | ConstantExpression;
+    | ConstantExpression>;
 
 export type LoopExpSet = {
     type: 'LoopSet',
