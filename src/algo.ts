@@ -1,16 +1,11 @@
-import { trace } from "console";
-import { generateRegexesMatchingAfter, generateRegexesMatchingBefore, getAllMatchedPositions, getIndistinguishablePartitions, getIndistinguishableTokens, IPartitionCache } from "./algo/match";
-import { AtomicExpSet, Edge, InputState, Mappings, PositionSet, RegExpSet, SubstringExpSet, TraceExpSet } from "./algo/types";
-import { BooleanExpression, E, Interpreter, RegularExpression, Token } from "./lang";
 import { unifyTraceExpressions } from "./algo/loop";
+import { generateRegexesMatchingAfter, generateRegexesMatchingBefore, getAllMatchedPositions, getIndistinguishableTokens, IPartitionCache } from "./algo/match";
 import { computeCompatibilityScore, evaluatePredicate, findBestPredicate, generatePredicates, intersectTraceExpSets } from "./algo/partition";
+import { AtomicExpSet, Edge, InputState, Mappings, PositionSet, RegExpSet, StringExpSet, SubstringExpSet, TraceExpSet } from "./algo/types";
+import { BooleanExpression, E, Interpreter, RegularExpression } from "./lang";
 
-interface ProgramSet {
-    type: 'SwitchSet';
-    cases: Set<{ condition: BooleanExpression, result: TraceExpSet }>;
-}
 
-function generateStringProgram(examples: Array<[InputState, string]>): ProgramSet {
+function generateStringProgram(examples: Array<[InputState, string]>): StringExpSet {
     // T := ∅
     let T: Map<InputState, TraceExpSet> = new Map();
 
@@ -28,7 +23,7 @@ function generateStringProgram(examples: Array<[InputState, string]>): ProgramSe
     const allStates = new Set(examples.map(([state]) => state));
 
     // Generate boolean classifiers for each partition
-    const cases = new Set();
+    const cases: Set<{ condition: BooleanExpression; result: TraceExpSet }> = new Set();
     for (const [states, trace] of partitions.entries()) {
         // let B[σ̃] := GenerateBoolClassifier(σ̃,σ̃′-σ̃)
         const remainingStates = new Set([...allStates].filter(s => !states.has(s)));
@@ -46,9 +41,7 @@ function generateStringProgram(examples: Array<[InputState, string]>): ProgramSe
     };
 }
 
-function generatePartition(
-    T: Map<InputState, TraceExpSet>
-): Map<Set<InputState>, TraceExpSet> {
+function generatePartition(T: Map<InputState, TraceExpSet>): Map<Set<InputState>, TraceExpSet> {
     // Initialize singleton partitions
     let partitions = new Map<Set<InputState>, TraceExpSet>();
     for (const [state, trace] of T.entries()) {

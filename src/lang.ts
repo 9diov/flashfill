@@ -258,7 +258,7 @@ export class Interpreter {
             this.interpretPosition(sub.start, inputStr, count as number);
         const endPos = count === undefined ? this.interpretPosition(sub.end, inputStr) :
             this.interpretPosition(sub.end, inputStr, count as number);
-        // console.log("input", inputStr, "start:", startPos, "end:", endPos, "output:", inputStr.slice(startPos.value, endPos.value));
+        console.log("input", inputStr, "start:", startPos, "end:", endPos, "output:", inputStr.slice(startPos.value, endPos.value));
         if (startPos.type === 'error' || endPos.type === 'error') {
             return {
                 type: 'error',
@@ -342,7 +342,9 @@ export class Interpreter {
 
     private interpretConstantCountPosition(pos: RegularExpressionPosition, input: string): PositionResult {
         if ((pos.count as ConstantInteger).value > 0) {
+            // return this.findForwardPosition(pos, input);
             return this.findForwardPosition2(pos, input);
+            // return this.findForwardPosition3(pos, input);
         } else {
             return this.findBackwardPosition2(pos, input);
         }
@@ -358,13 +360,57 @@ export class Interpreter {
         return this.interpretConstantCountPosition(pos1, input);
     }
 
+    // 1st attempt
+    // Currently fails if
+    // - there's StartTok/EndTok in the regexes
+    // - there's empty regex e.g. Pos(empty, NonSpaceToken, w) match " Oege   de"
     private findForwardPosition(pos: RegularExpressionPosition, input: string): PositionResult {
+        const regex1 = mapRegex(pos.regex1);
+        const regex2 = mapRegex(pos.regex2);
+        if (regex1 === '' && regex2 === '') {
+            return {
+                type: 'error',
+                error: 'Both regexes are empty'
+            }
+        }
+
+        // if (regex1 === '') {
+        //     const Regex2 = new RegExp(mapRegex(pos.regex2), 'g');
+        //     let count = 0;
+        //     let result;
+        //     while(result = Regex2.exec(input)) {
+        //         count++;
+        //         if (count === pos.count.value) {
+        //             return {
+        //                 type: 'success',
+        //                 value: result.index
+        //             };
+        //         }
+        //     }
+        // }
+
+        // if (regex2 === '') {
+        //     const Regex1 = new RegExp(regex1, 'g');
+        //     let count = 0;
+        //     let result;
+        //     while(result = Regex1.exec(input)) {
+        //         count++;
+        //         if (count === pos.count.value) {
+        //             return {
+        //                 type: 'success',
+        //                 value: result.index
+        //             };
+        //         }
+        //     }
+        // }
+
+
+        // this only works for non start/end tokens
         let count = 0;
         let cursor = 0;
-
         for (let i = 0; i < input.length; i++) {
-            if (input.slice(0, i).match(mapRegex(pos.regex1) + "$") && 
-                input.slice(i).match("^" + mapRegex(pos.regex2))) {
+            if (input.slice(0, i).match(regex1 + "$")  && 
+                input.slice(i).match("^" + regex2)) {
                 count++;
             }
             if (count === pos.count.value) {
@@ -374,13 +420,17 @@ export class Interpreter {
                 };
             }
         }
+
         return {
             type: 'error',
-            error: 'Position not found'
+            error: 'Position not found, using regex1: ' + mapRegex(pos.regex1) + ' and regex2: ' + mapRegex(pos.regex2)
         };
     }
 
     // Forward matching when pos.count.value > 0
+    // 2nd attempt
+    // Currently fails if there are consecutive overlapping token types e.g.
+    // alpha-numeric and numeric
     private findForwardPosition2(pos: RegularExpressionPosition, input: string): PositionResult {
         const regex1 = mapRegex(pos.regex1);
         const regex2 = mapRegex(pos.regex2);
@@ -392,7 +442,7 @@ export class Interpreter {
         }
 
         if (regex1 === '') {
-            const Regex2 = new RegExp(mapRegex(pos.regex2), 'g');
+            const Regex2 = new RegExp(regex2, 'g');
             let count = 0;
             let result;
             while(result = Regex2.exec(input)) {
@@ -404,33 +454,105 @@ export class Interpreter {
                     };
                 }
             }
+            return {
+                type: 'error',
+                error: 'Position not found, using regex2: ' + mapRegex(pos.regex2) + 'pos.count.value: ' + pos.count.value
+            }
         }
 
+        if (regex2 === '') {
+            const Regex1 = new RegExp(regex1, 'g');
+            let count = 0;
+            let result;
+            while(result = Regex1.exec(input)) {
+                count++;
+                if (count === pos.count.value) {
+                    return {
+                        type: 'success',
+                        value: Regex1.lastIndex
+                    };
+                }
+            }
+            return {
+                type: 'error',
+                error: 'Position not found, using regex1: ' + mapRegex(pos.regex1) + 'pos.count.value: ' + pos.count.value
+            }
+        }
+
+        const matchedIndexes: Set<number> = new Set([]);
         // Going through all the matches of regex1
         // and checking if the prefix of the next part of the string matches regex2
-        // if it does, we increment the count
-        // return the position when count reaches the desired value
+        // if it does, we add the posi
+
         const Regex1 = new RegExp(regex1, 'g');
-        let count = 0;
-        let cursor = -1; // for case when no match is found
+        while (Regex1.exec(input)) {
+            if (input.slice(Regex1.lastIndex).match("^" + regex2))
+                matchedIndexes.add(Regex1.lastIndex);
+        }
+
+        const Regex2 = new RegExp(regex2, 'g');
         let result;
-        while (result = Regex1.exec(input)) {
-            cursor = Regex1.lastIndex;
-            if (input.slice(cursor).match("^" + regex2)) count++;
+        while (result = Regex2.exec(input)) {
+            if (input.slice(0, result.index).match(regex1 + "$"))
+                matchedIndexes.add(result.index);
+        }
+
+        if (pos.count.value > matchedIndexes.size) {
+            return {
+                type: 'error',
+                error: 'Position not found, using regex1: ' + mapRegex(pos.regex1) + ' and regex2: ' + mapRegex(pos.regex2)
+            };
+        } else {
+            return {
+                type: 'success',
+                value: Array.from(matchedIndexes).sort((a, b) => a - b)[pos.count.value - 1]
+            }
+
+        }
+    }
+
+    // 3rd attempt, using regex1 + regex2
+    private findForwardPosition3(pos: RegularExpressionPosition, input: string): PositionResult {
+        const regex1 = mapRegex(pos.regex1);
+        const regex2 = mapRegex(pos.regex2);
+        if (regex1 === '' && regex2 === '') {
+            return {
+                type: 'error',
+                error: 'Both regexes are empty'
+            }
+        }
+
+        const findSplitPosition = (input: string, start: number, end: number, regex1: string, regex2: string): number => {
+            for (let i = start; i <= end; i++) {
+                if (input.slice(start, i).match(regex1 + "$") &&
+                    input.slice(i, end).match("^" +regex2)) {
+                    return i;
+                }
+            }
+            return -Infinity; // this should never happen
+        }
+
+        const combinedRegex = new RegExp(regex1 + regex2, 'g');
+        let count = 0;
+        let result;
+        while (result = combinedRegex.exec(input)) {
+            count++;
             if (count === pos.count.value) {
-                // console.log("cursor", cursor, "count", count, "result", result);
+                console.log("count", count, "start", result.index, "end", combinedRegex.lastIndex);
                 return {
                     type: 'success',
-                    value: cursor
+                    value: findSplitPosition(input, result.index, combinedRegex.lastIndex, regex1, regex2)
                 };
             }
         }
 
         return {
             type: 'error',
-            error: 'Position not found'
+            error: 'Forward match: Position not found at count: ' + pos.count.value +
+             ', using regex1: ' + mapRegex(pos.regex1) + ' and regex2: ' + mapRegex(pos.regex2)
         };
     }
+
 
     private findBackwardPosition(pos: RegularExpressionPosition, input: string): PositionResult {
         let count = 0;
