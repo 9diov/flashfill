@@ -497,6 +497,7 @@ export class Interpreter {
                 matchedIndexes.add(result.index);
         }
 
+        console.log("matchedIndexes", matchedIndexes);
         if (pos.count.value > matchedIndexes.size) {
             return {
                 type: 'error',
@@ -608,20 +609,22 @@ export class Interpreter {
             }
         }
 
-        // Going through all the matches of regex1
-        // and checking if the prefix of the next part of the string matches regex2
-        // if it does, we increment the count
-        // return the position when count reaches the desired value
+        const matchedIndexes: Set<number> = new Set([]);
         const Regex1 = new RegExp(regex1, 'g');
-        let cursor = -1; // for case when no match is found
         while (Regex1.exec(input)) {
-            cursor = Regex1.lastIndex;
-            if (input.slice(cursor).match("^" + regex2)) {
-                indexes.push(cursor);
+            if (input.slice(Regex1.lastIndex).match("^" + regex2)) {
+                matchedIndexes.add(Regex1.lastIndex);
             }
         }
 
-        if (-pos.count.value > indexes.length) {
+        const Regex2 = new RegExp(regex2, 'g');
+        let result;
+        while (result = Regex2.exec(input)) {
+            if (input.slice(0, result.index).match(regex1 + "$"))
+                matchedIndexes.add(result.index);
+        }
+
+        if (-pos.count.value > matchedIndexes.size) {
             return {
                 type: 'error',
                 error: 'Position not found'
@@ -629,7 +632,7 @@ export class Interpreter {
         } else {
             return {
                 type: 'success',
-                value: indexes[indexes.length + pos.count.value]
+                value: Array.from(matchedIndexes).sort((a, b) => a - b)[matchedIndexes.size + pos.count.value]
             };
         }
     }
