@@ -120,6 +120,15 @@ export class RegularExpression {
     append(r: RegularExpression) {
         return new RegularExpression([...this.tokens, ...r.tokens]);
     }
+
+    addToken(token: Token) {
+        this.tokens.push(token);
+        return this;
+    }
+
+    clone() {
+        return new RegularExpression([...this.tokens]);
+    }
 }
 
 // Tokens (T)
@@ -306,6 +315,7 @@ export class Interpreter {
         } else {
             return {
                 type: 'success',
+                // negative position is relative to the end of the string
                 value: pos.value >= 0 ? pos.value : input.length + pos.value + 1
             };
         }

@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { generatePosition } from '../src/algo';
-import { E } from '../src/lang';
+import { generatePosition, interpretPosition } from '../src/algo';
+import { E, Interpreter } from '../src/lang';
 import { generateRegexesMatchingAfter, generateRegexesMatchingBefore, IPartitionCache } from '../src/algo/match';
+import { allPositions } from '../src/algo/types';
 
 
 
@@ -76,12 +77,19 @@ describe('generatePosition', () => {
         const str = "a1";
         const k = 1;
 
-        const result = generatePosition(str, k);
-        expect(result.size).toBeGreaterThan(0);
-        expect(result.size).toEqual(6);
+        const positions = generatePosition(str, k);
+        expect(positions.size).toBeGreaterThan(0);
+        expect(positions.size).toEqual(6);
 
         // TODO: Use interpetPosition to check if the generated positions are correct
-
+        const interpreter = new Interpreter();
+        for (const pos of allPositions(positions)) {
+            console.dir(pos, { depth: null });
+            const result = interpreter.interpretPosition(pos, str);
+            console.dir(result, { depth: null });
+            expect(result.type).toEqual('success');
+            expect(result.value).toEqual(k);
+        }
     });
 
     // it('should handle empty string', () => {

@@ -267,7 +267,7 @@ export function generatePosition(str: string, k: number): PositionSet {
     });
     result.add({
         type: 'CPos',
-        value: -(str.length - k)
+        value: -(str.length - k + 1)
     });
 
     const cache = new IPartitionCache(str);

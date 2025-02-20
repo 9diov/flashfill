@@ -1,7 +1,7 @@
 // Sets of string expressions
 // Refer to Figure 3 of Gulwani paper
 
-import { BooleanExpression, ConstantExpression, ConstantPosition, IntegerExpression, Position, StringVariable, Token } from "../lang"
+import { BooleanExpression, ConstantExpression, ConstantPosition, IntegerExpression, Position, RegularExpression, StringVariable, Token } from "../lang"
 
 export type StringExpSet = {
     type: 'SwitchSet',
@@ -65,3 +65,59 @@ export type TokenSet = {
 }
 
 export type InputState = Record<string, string>; // { "v1": "input 1", "v2": "input 2" }
+
+// generate all RegularExpressions in the regex set
+function* allRegexes(regexSet: RegExpSet): Generator<RegularExpression> {
+    if (regexSet.tokens.length === 0) {
+        return;
+    }
+
+    // Start with first token set
+    let currentResults: Array<RegularExpression> = [new RegularExpression([])];
+
+    // Process each token set
+    for (let i = 0; i < regexSet.tokens.length; i++) {
+        const tokenSet = regexSet.tokens[i];
+        const newResults: Array<RegularExpression> = [];
+
+        // For each token in current set
+        for (const token of tokenSet.tokens) {
+            // Add token to each existing regex
+            for (const regex of currentResults) {
+                newResults.push(regex.clone().addToken(token));
+            }
+        }
+
+        // If this is the last token set, yield results
+        if (i === regexSet.tokens.length - 1) {
+            for (const result of newResults) {
+                yield result;
+            }
+        }
+        // Otherwise update current results and continue
+        else {
+            currentResults = newResults;
+        }
+    }
+}
+
+function allCounts(integerSet: IntegerExpSet): Array<IntegerExpression> {
+    return Array.from(integerSet.values);
+}
+
+// enumerate all positions in the position set
+export function* allPositions(positions: PositionSet): Generator<Position> {
+    for (const pos of positions) {
+        if (pos.type === 'CPos') {
+            yield pos;
+        } else if (pos.type === 'RegExpPositionSet') {
+            for (const regex1 of allRegexes(pos.regex1)) {
+                for (const regex2 of allRegexes(pos.regex2)) {
+                    for (const count of allCounts(pos.count)) {
+                        yield { type: 'Pos', regex1, regex2, count: count };
+                    }
+                }
+            }
+        }
+    }
+}
