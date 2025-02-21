@@ -431,6 +431,7 @@ export class Interpreter {
     // 2nd attempt
     // Currently fails if there are consecutive overlapping token types e.g.
     // alpha-numeric and numeric
+    // TODO: optimize this
     private findForwardPosition2(pos: RegularExpressionPosition, input: string): PositionResult {
         const regex1 = mapRegex(pos.regex1);
         const regex2 = mapRegex(pos.regex2);
@@ -583,6 +584,7 @@ export class Interpreter {
     }
 
     // Backward matching when pos.count.value < 0
+    // TODO: optimize this
     private findBackwardPosition2(pos: RegularExpressionPosition, input: string): PositionResult {
         const regex1 = mapRegex(pos.regex1);
         const regex2 = mapRegex(pos.regex2);
@@ -596,12 +598,31 @@ export class Interpreter {
             }
         }
 
-        const indexes = [];
+        let indexes = [];
         if (regex1 === '') {
             const Regex2 = new RegExp(mapRegex(pos.regex2), 'g');
             let result;
             while(result = Regex2.exec(input)) {
                 indexes.push(result.index);
+            }
+            if (-pos.count.value > indexes.length) {
+                return {
+                    type: 'error',
+                    error: 'Position not found'
+                };
+            } else {
+                return {
+                    type: 'success',
+                    value: indexes[indexes.length + pos.count.value]
+                };
+            }
+        }
+
+        indexes = [];
+        if (regex2 === '') {
+            const Regex1 = new RegExp(mapRegex(pos.regex1), 'g');
+            while(Regex1.exec(input)) {
+                indexes.push(Regex1.lastIndex);
             }
             if (-pos.count.value > indexes.length) {
                 return {
