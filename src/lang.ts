@@ -497,6 +497,13 @@ export class Interpreter {
                 matchedIndexes.add(result.index);
         }
 
+        for (let i = 0; i < input.length; i++) {
+            if (input.slice(0, i).match(regex1 + "$")  &&
+                input.slice(i).match("^" + regex2)) {
+                    matchedIndexes.add(i);
+            }
+        }
+
         console.log("matchedIndexes", matchedIndexes);
         if (pos.count.value > matchedIndexes.size) {
             return {
@@ -622,6 +629,13 @@ export class Interpreter {
         while (result = Regex2.exec(input)) {
             if (input.slice(0, result.index).match(regex1 + "$"))
                 matchedIndexes.add(result.index);
+        }
+
+        for (let i = 0; i < input.length; i++) {
+            if (input.slice(0, i).match(regex1 + "$")  &&
+                input.slice(i).match("^" + regex2)) {
+                    matchedIndexes.add(i);
+            }
         }
 
         if (-pos.count.value > matchedIndexes.size) {
