@@ -164,6 +164,7 @@ export function generateRegexesMatchingBefore(str: string, k: number,
 
     // console.dir(result, { depth: null });
 
+    // TODO: check if this is necessary
     // result.add(E.Regex()); // adding empty regex
 
     return result;

@@ -81,10 +81,10 @@ describe('generateRegexesMatchingBefore', () => {
 
     it('should return correct regexes for given string and position', () => {
         const str = " ab1c2a  Bc";
-        expect(generateRegexesMatchingBefore(str, 1).size).toEqual(2);
-        expect(generateRegexesMatchingBefore(str, 2).size).toEqual(7);
-        expect(generateRegexesMatchingBefore(str, 3).size).toEqual(7);
-        expect(generateRegexesMatchingBefore(str, 4).size).toEqual(12);
+        expect(generateRegexesMatchingBefore(str, 1).size).toEqual(1);
+        expect(generateRegexesMatchingBefore(str, 2).size).toEqual(6);
+        expect(generateRegexesMatchingBefore(str, 3).size).toEqual(6);
+        expect(generateRegexesMatchingBefore(str, 4).size).toEqual(11);
     });
 
     it('should throw error when position is beyond string length', () => {
@@ -97,8 +97,8 @@ describe('generateRegexesMatchingBefore', () => {
 describe('generateRegexesMatchingAfter', () => {
     it('should return correct regexes for given string and position', () => {
         const str = "a1c\\-3a";
-        expect(generateRegexesMatchingAfter(str, 1).size).toEqual(12);
-        expect(generateRegexesMatchingAfter(str, 2).size).toEqual(6);
-        expect(generateRegexesMatchingAfter(str, 3).size).toEqual(2);
+        expect(generateRegexesMatchingAfter(str, 1).size).toEqual(11);
+        expect(generateRegexesMatchingAfter(str, 2).size).toEqual(5);
+        expect(generateRegexesMatchingAfter(str, 3).size).toEqual(1);
     });
 });

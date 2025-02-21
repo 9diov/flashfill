@@ -429,7 +429,6 @@ export class Interpreter {
 
     // Forward matching when pos.count.value > 0
     // 2nd attempt
-    // Currently fails if there are consecutive overlapping token types e.g.
     // alpha-numeric and numeric
     // TODO: optimize this
     private findForwardPosition2(pos: RegularExpressionPosition, input: string): PositionResult {
@@ -481,10 +480,8 @@ export class Interpreter {
         }
 
         const matchedIndexes: Set<number> = new Set([]);
-        // Going through all the matches of regex1
-        // and checking if the prefix of the next part of the string matches regex2
-        // if it does, we add the posi
 
+        // These 2 blocks are required to handle special tokens e.g. start/end tokens
         const Regex1 = new RegExp(regex1, 'g');
         while (Regex1.exec(input)) {
             if (input.slice(Regex1.lastIndex).match("^" + regex2))
@@ -498,6 +495,7 @@ export class Interpreter {
                 matchedIndexes.add(result.index);
         }
 
+        // handle cases when regex1 and regex2 are the same
         for (let i = 0; i < input.length; i++) {
             if (input.slice(0, i).match(regex1 + "$")  &&
                 input.slice(i).match("^" + regex2)) {
