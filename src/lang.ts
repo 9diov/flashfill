@@ -307,7 +307,7 @@ export class Interpreter {
     }
 
     private interpretConstantPosition(pos: ConstantPosition, input: string): PositionResult {
-        if (pos.value < -input.length || pos.value >= input.length) {
+        if (pos.value < -(input.length + 1) || pos.value >= input.length) {
             return {
                 type: 'error',
                 error: 'Invalid position'

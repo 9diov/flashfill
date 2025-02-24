@@ -2,9 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { generatePosition, interpretPosition } from '../src/algo';
 import { E, Interpreter } from '../src/lang';
 import { generateRegexesMatchingAfter, generateRegexesMatchingBefore, IPartitionCache } from '../src/algo/match';
-import { allPositions } from '../src/algo/types';
-
-
+import { allPositions, PositionSet } from '../src/algo/types';
 
 // describe('generateRegex', () => {
 //     it('should generate regex set for a given regular expression and string', () => {
@@ -73,93 +71,75 @@ import { allPositions } from '../src/algo/types';
 // });
 
 describe('generatePosition', () => {
+    const verifyPosition = (str: string, k: number, result: PositionSet) => {
+        const positions = generatePosition(str, k);
+        expect(positions.size).toBeGreaterThan(0);
+
+        const interpreter = new Interpreter();
+        for (const pos of allPositions(positions)) {
+            // console.dir(pos, { depth: null });
+            const result = interpreter.interpretPosition(pos, str);
+            if (result.type === 'error') {
+                console.error("result:", result, "pos:", pos);
+                break;
+            }
+            // console.dir(result, { depth: null });
+            expect(result.type).toEqual('success');
+
+            if (result.value !== k) {
+                console.error("str:", str, "result:", result, "pos:", pos, "k:", k);
+                console.dir(pos, { depth: null });
+            }
+            expect(result.value).toEqual(k);
+        }
+    }
+
     it('should generate position set for a given string and position', () => {
         const str = "a1";
         const k = 1;
 
         const positions = generatePosition(str, k);
-        expect(positions.size).toBeGreaterThan(0);
         expect(positions.size).toEqual(6);
 
-        // TODO: Use interpetPosition to check if the generated positions are correct
-        const interpreter = new Interpreter();
-        for (const pos of allPositions(positions)) {
-            console.dir(pos, { depth: null });
-            const result = interpreter.interpretPosition(pos, str);
-            console.dir(result, { depth: null });
-            expect(result.type).toEqual('success');
-            expect(result.value).toEqual(k);
-        }
+        verifyPosition(str, k, positions);
     });
 
-    // it('should handle empty string', () => {
-    //     const str = "";
-    //     const k = 0;
-    //     const result = generatePosition(str, k);
+    it('should handle empty string', () => {
+        const str = "";
+        const k = 0;
 
-    //     expect(result).toEqual(new Set([
-    //         { type: 'CPos', value: k },
-    //         { type: 'CPos', value: -(str.length - k) }
-    //     ]));
-    // });
+        expect(() => { generatePosition(str, 0) }).toThrow();
+    });
 
-    // it('should handle position at the start of the string', () => {
-    //     const str = "abcabc";
-    //     const k = 0;
-    //     const result = generatePosition(str, k);
+    it('should handle position at the start of the string', () => {
+        const str = "abcabc";
+        const k = 0;
 
-    //     expect(result).toEqual(new Set([
-    //         { type: 'CPos', value: k },
-    //         { type: 'CPos', value: -(str.length - k) },
-    //         {
-    //             type: 'RegExpPositionSet',
-    //             regex1: {
-    //                 type: 'RegExpSet',
-    //                 tokens: [
-    //                     { type: 'TokenSet', tokens: new Set([E.CharToken()]) }
-    //                 ]
-    //             },
-    //             regex2: {
-    //                 type: 'RegExpSet',
-    //                 tokens: [
-    //                     { type: 'TokenSet', tokens: new Set([E.CharToken()]) }
-    //                 ]
-    //             },
-    //             count: {
-    //                 type: 'IntegerSet',
-    //                 values: new Set([E.Int(1), E.Int(2)])
-    //             }
-    //         }
-    //     ]));
-    // });
+        const positions = generatePosition(str, k);
+        verifyPosition(str, k, positions);
+    });
 
-    // it('should handle position at the end of the string', () => {
-    //     const str = "abcabc";
-    //     const k = str.length - 1;
-    //     const result = generatePosition(str, k);
+    it('should handle position at the end of the string', () => {
+        const str = "abcabc";
+        const k = str.length - 1;
 
-    //     expect(result).toEqual(new Set([
-    //         { type: 'CPos', value: k },
-    //         { type: 'CPos', value: -(str.length - k) },
-    //         {
-    //             type: 'RegExpPositionSet',
-    //             regex1: {
-    //                 type: 'RegExpSet',
-    //                 tokens: [
-    //                     { type: 'TokenSet', tokens: new Set([E.CharToken()]) }
-    //                 ]
-    //             },
-    //             regex2: {
-    //                 type: 'RegExpSet',
-    //                 tokens: [
-    //                     { type: 'TokenSet', tokens: new Set([E.CharToken()]) }
-    //                 ]
-    //             },
-    //             count: {
-    //                 type: 'IntegerSet',
-    //                 values: new Set([E.Int(1), E.Int(2)])
-    //             }
-    //         }
-    //     ]));
-    // });
+        const positions = generatePosition(str, k);
+        verifyPosition(str, k, positions);
+    });
+
+    it('should handle position in the middle of the string', () => {
+        const str = "abcabc";
+        const k = 3;
+
+        const positions = generatePosition(str, k);
+        verifyPosition(str, k, positions);
+    });
+
+    it('should handle position in the middle of the string with repeated tokens', () => {
+        const str = "aa";
+        const k = 1;
+
+        const positions = generatePosition(str, k);
+        verifyPosition(str, k, positions);
+    });
 });
