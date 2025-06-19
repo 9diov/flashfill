@@ -81,8 +81,6 @@ on-activate = """
 # Systems that environment is compatible with
 systems = [
   "aarch64-darwin",
-  "aarch64-linux",
-  "x86_64-darwin",
   "x86_64-linux",
 ]
 # Uncomment to disable CUDA detection.
